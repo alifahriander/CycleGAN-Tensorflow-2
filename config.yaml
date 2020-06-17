@@ -1,0 +1,15 @@
+adversarial_loss_mode: lsgan
+batch_size: 1
+beta_1: 0.5
+crop_size: 256
+cycle_loss_weight: 10.0
+dataset: horse2zebra
+datasets_dir: datasets
+epoch_decay: 100
+epochs: 200
+gradient_penalty_mode: none
+gradient_penalty_weight: 10.0
+identity_loss_weight: 0.0
+load_size: 286
+lr: 0.0002
+pool_size: 50

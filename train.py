@@ -12,15 +12,28 @@ import tqdm
 import data
 import module
 
+import datetime
+import time
+
+import yaml 
+
+
+def get_timestamp():
+    date = datetime.datetime.strptime(time.ctime(), "%a %b %d %H:%M:%S %Y")
+    timestamp = datetime.datetime.strftime(date, "%Y%m%d_%H%M%S")
+
+    return timestamp
+
+
 
 # ==============================================================================
 # =                                   param                                    =
 # ==============================================================================
 
-py.arg('--dataset', default='horse2zebra')
+py.arg('--dataset', default='pathology')
 py.arg('--datasets_dir', default='datasets')
-py.arg('--load_size', type=int, default=286)  # load image to this size
-py.arg('--crop_size', type=int, default=256)  # then crop to this size
+py.arg('--load_size', type=int, default=248)  # load image to this size
+py.arg('--crop_size', type=int, default=248)  # then crop to this size
 py.arg('--batch_size', type=int, default=1)
 py.arg('--epochs', type=int, default=200)
 py.arg('--epoch_decay', type=int, default=100)  # epoch to start decaying learning rate
@@ -30,12 +43,14 @@ py.arg('--adversarial_loss_mode', default='lsgan', choices=['gan', 'hinge_v1', '
 py.arg('--gradient_penalty_mode', default='none', choices=['none', 'dragan', 'wgan-gp'])
 py.arg('--gradient_penalty_weight', type=float, default=10.0)
 py.arg('--cycle_loss_weight', type=float, default=10.0)
-py.arg('--identity_loss_weight', type=float, default=0.0)
+py.arg('--identity_loss_weight', type=float, default=0.5)
 py.arg('--pool_size', type=int, default=50)  # pool size to store fake samples
 args = py.args()
 
+
 # output_dir
 output_dir = py.join('output', args.dataset)
+output_dir = py.join(output_dir, get_timestamp())
 py.mkdir(output_dir)
 
 # save settings
@@ -176,7 +191,7 @@ checkpoint = tl.Checkpoint(dict(G_A2B=G_A2B,
                                 D_optimizer=D_optimizer,
                                 ep_cnt=ep_cnt),
                            py.join(output_dir, 'checkpoints'),
-                           max_to_keep=5)
+                           max_to_keep=10)
 try:  # restore checkpoint including the epoch counter
     checkpoint.restore().assert_existing_objects_matched()
 except Exception as e:
@@ -209,7 +224,7 @@ with train_summary_writer.as_default():
             tl.summary({'learning rate': G_lr_scheduler.current_learning_rate}, step=G_optimizer.iterations, name='learning rate')
 
             # sample
-            if G_optimizer.iterations.numpy() % 100 == 0:
+            if G_optimizer.iterations.numpy() % 50 == 0:
                 A, B = next(test_iter)
                 A2B, B2A, A2B2A, B2A2B = sample(A, B)
                 img = im.immerge(np.concatenate([A, A2B, A2B2A, B, B2A, B2A2B], axis=0), n_rows=2)
